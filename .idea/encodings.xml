@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/src/contentDealer/UnionFindSet.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/contentDealer/WeiBoContentFilter.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/dao/ContentDao.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/dao/RunHibernate.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/dao/Test.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/httpComponent/BeiJingGeoSpider.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/httpComponent/LoginSina.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/ikanalyzer/ContentWithGeoFinder.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/ikanalyzer/IKAnalyzerUtil.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/json/PlaceGeo.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/json/WeiBoContent.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/location/prepare/ContentLocationOperation.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/location/prepare/GeoInfoOperation.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/utils/Utils.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/web/js/DrawingManager_min.js" charset="GBK" />
+  </component>
+</project>

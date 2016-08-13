@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping SYSTEM "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd" >
+<hibernate-mapping>
+    <!-- 一个class标签对应一个实体类，name属性指定实体类名称，table属性指定关联的数据库表 -->
+    <class name="json.WeiBoContent" table="weibo_content_new">
+        <!-- 主键 -->
+        <id name="id" column="id">
+            <!-- 主键的生成策略 -->
+            <generator class="increment"></generator>
+        </id>
+        <!-- 其他属性，name对应实体类的属性，column对应关系型数据库表的列 -->
+        <property name="username" column="name"></property>
+        <property name="content" column="content"></property>
+        <property name="time" column="time"></property>
+        <property name="lng"/>
+        <property name="lat"/>
+        <property name="addr" column="address"/>
+        <property name="type"/>
+        <property name="fatherId" column="fatherID"/>
+        <property name="isShow"/>
+    </class>
+</hibernate-mapping>

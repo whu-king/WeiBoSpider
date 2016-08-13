@@ -1,0 +1,514 @@
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&
+  ak=XXPFtqDXGNnuNWmIfNMpDVuoUMoRVG8T"></script>
+  <script type="text/javascript" src="js/jquery-1.10.2.js"></script>
+  <script type="text/javascript" src="js/dialog-min.js"></script>
+  <script type="text/javascript" src="js/InfoBox_min.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/map.css"/>
+  <script type="text/javascript" src="js/MarkerClusterer_min.js"></script>
+  <script type="text/javascript" src="js/TextIconOverlay_min.js"></script>
+    <script type="text/javascript" src="js/SearchControl_min.js"></script>
+  <link rel="stylesheet" href="css/ui-dialog.css">
+    <link rel="stylesheet" href="css/SearchControl_min.css">
+  <style type="text/css">
+    body, html {width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+    p{margin-left:5px; font-size:14px;font-family:"微软雅黑"}
+  </style>
+  <title>事件地图开发版</title>
+</head>
+
+
+
+<body>
+<div class="page-outer">
+    <!--顶部导航-->
+    <div class="page-top">
+        <!--logo-->
+        <div class="logo">
+            <div class="chinese-logo">城市事件地图</div>
+            <div class="english-logo">URBAN MAP OF EVENT</div>
+        </div>
+        <!--地区切换-->
+        <div class="location-tab">
+            <span>智慧城市</span>
+            <!--<select>-->
+                <!--<option>北京</option>-->
+                <!--<option>上海</option>-->
+                <!--<option>武汉</option>-->
+                <!--<option>深圳</option>-->
+            <!--</select>-->
+        </div>
+        <!--搜索-->
+
+        <div class="search">
+            <!--<div id="searchBox"></div>-->
+            <!--<input type=text/><button type="button">搜索</button>-->
+        </div>
+        <div class="login-register">
+            <span>登录</span>|<span>注册</span>
+        </div>
+    </div>
+    <!--内容-->
+    <div id="searchBox"></div>
+    <div class="page-content">
+        <!--左侧导航-->
+        <div class="left-nav" id="left-nav">
+            <ul>
+                <li onclick="setli('left-nav',0)">地图浏览</li>
+                <li onclick="setli('left-nav',1)">附近事件</li>
+                <li onclick="setli('left-nav',2)">添加事件</li>
+                <li onclick="setli('left-nav',3)">收藏事件</li>
+                <li onclick="setli('left-nav',4)">设置</li>
+                <li onclick="setli('left-nav',5)">关于我们</li>
+            </ul>
+        </div>
+        <!--右侧地图-->
+        <div class="right-map">
+            <!--地图类型-->
+            <div class="map-type" id="map-type">
+						<span>
+							<ul>
+                                <li onclick="setli('map-type',0);loadSafeEvent()">城市安全地图</li>
+                                <li onclick="setli('map-type',1);loadArtEvent()">城市艺术地图</li>
+                                <li onclick="setli('map-type',2)">城市折扣地图</li>
+                                <li onclick="setli('map-type',3)">城市文化地图</li>
+                                <li onclick="setli('map-type',4)">政府信息地图</li>
+                                <li onclick="setli('map-type',5)">城市淹水地图</li>
+                                <li onclick="setli('map-type',6); add_map_type();">更多</li>
+                            </ul>
+						</span>
+                <!-- <span class="add-type">更多</span> -->
+            </div>
+            <!--地图显示-->
+
+            <!--百度地图容器-->
+            <div class="map-display" id="map"></div>
+
+        </div>
+
+    </div>
+</div>
+<!-- <div style="width:80%;height:80%;border:#ccc solid 1px;font-size:12px;left: 10%;top: 2%" id="map"></div> -->
+</body>
+
+<script type="text/javascript">
+    onload=function(){
+        setli("left-nav", 0);
+        setli("map-type", 0);
+    }
+
+    function setli(id, index){
+        var lis=document.getElementById(id).getElementsByTagName("li");
+        for(var i=0; i<lis.length; i++)
+        {
+            if(i != index)
+            {
+                lis[i].style.backgroundColor="rgb(255,255,255)";
+            }
+            else
+            {
+                lis[i].style.backgroundColor="rgb(255,192,0)";
+            }
+        }
+    }
+
+    </script>
+
+
+<script type="text/javascript">
+    setInterval(function(){
+        $.get(
+                "checkUpdate.action",
+                function (isUpdate) {
+                    if(isUpdate == "1"){
+                        var tip2 = dialog({
+                            title : "提示",
+                            content: '有新事件发生',
+                            okValue: '确定',
+                            ok: function (){
+                                loadSafeEvent();
+                            }});
+                        tip2.show();
+                    }
+                },
+                "json"
+        );  //从后台获取所有数据
+    },20000);
+
+
+</script>
+
+<script type="text/javascript">
+
+  var map;
+  var markerString = new Array();
+  var markCount = 0;
+  var markerClusterer
+  initMap();
+  loadSafeEvent();
+
+  //创建和初始化地图函数：
+  function initMap(){
+//    alert("in initMap()");
+    createMap();//创建地图
+    setMapEvent();//设置地图事件
+    addMapControl();//向地图添加控件
+    addGeolocate();//添加定位控件
+     addSearcher();
+
+  }
+  function createMap(){
+    map = new BMap.Map("map");
+    map.centerAndZoom(new BMap.Point(116.37,39.928007),11);
+  }
+
+  function setMapEvent(){
+    map.enableScrollWheelZoom();
+    map.enableKeyboard();
+    map.enableDragging();
+    map.disableDoubleClickZoom();
+    map.addEventListener("dblclick",addEventNode);
+  }
+  function addClickHandler(target,window){
+    target.addEventListener("click",function(){
+      target.openInfoWindow(window);
+    });
+  }
+  //向地图添加控件
+  function addMapControl(){
+    var scaleControl = new BMap.ScaleControl({anchor:BMAP_ANCHOR_BOTTOM_LEFT});
+    scaleControl.setUnit(BMAP_UNIT_IMPERIAL);
+    map.addControl(scaleControl);
+    var navControl = new BMap.NavigationControl({anchor:BMAP_ANCHOR_TOP_LEFT,type:0});
+    map.addControl(navControl);
+    var overviewControl = new BMap.OverviewMapControl({anchor:BMAP_ANCHOR_BOTTOM_RIGHT,isOpen:true});
+    map.addControl(overviewControl);
+  }
+
+  function addSearcher(){
+      var searchControl = new BMapLib.SearchControl({
+          container : "searchBox" //存放控件的容器
+          , map     : map  //关联地图对象
+          , type    : LOCAL_SEARCH  //检索类型
+      });
+  }
+
+  function addGeolocate(){
+    var geolocationControl = new BMap.GeolocationControl();
+    geolocationControl.addEventListener("locationSuccess", function(e){
+      // 定位成功事件
+      var address = '';
+      address += e.addressComponent.province;
+      address += e.addressComponent.city;
+      address += e.addressComponent.district;
+      address += e.addressComponent.street;
+      address += e.addressComponent.streetNumber;
+      alert("当前定位地址为：" + address);
+    });
+    geolocationControl.addEventListener("locationError",function(e){
+      // 定位失败事件
+      alert(e.message);
+    });
+    map.addControl(geolocationControl);
+  }
+
+  function backToBeiJing(){
+    map.centerAndZoom(new BMap.Point(116.37,39.928007),11);
+  }
+
+  function getEventTypeString(typeNumber){
+    switch (typeNumber){
+      case '1' :  return "安全";
+      case '2' : return "购物";
+      case '3' : return "校园";
+      case '4' : return "艺术";
+      default : return "未知类型";
+    }
+  }
+
+  function addEventNode(e){
+    if(this instanceof BMap.Marker) {return false }
+    var tip = dialog({
+      title: '提示',
+      content: '<p>是否创建热点事件？<p>',
+      okValue: '确定',
+      ok: function () {
+        var eventInfo = dialog({
+          title: '事件详情',
+          content: '<p>时间:</p><input id="time" name = "事件时间" value="" /><br>' +
+                    '<p>地点:</p><input id="address" name = "事件地址" value="" /><br>' +
+                  '<p>事件类型:<p><select name = "事件类型" id = "type"> <option value ="安全">安全</option>' +
+                            '<option value ="购物">购物</option>' +
+                              '<option value="校园">校园</option>' +
+                              '<option value="艺术">艺术</option></select><br>' +
+                  '<p>详细:<p><textarea rows = "4" id="content" name = "事件内容" value="" />',
+          ok: function () {
+            var contentValue = $('#content').val();
+            var typeValue = $('#type').val();
+            var timeValue = $('#time').val();
+            var addressValue = $('#address').val();
+
+            //检查内容是否为空
+            if(timeValue == "" || contentValue == ""){
+              if(timeValue == ""){
+                var d = dialog({
+                  content: '时间不能为空',
+                  quickClose: true// 点击空白处快速关闭
+                });
+                d.show(document.getElementById('time'));
+              }
+              if(contentValue == ""){
+                var d = dialog({
+                  content: '明细不能为空',
+                  quickClose: true
+                });
+                d.show(document.getElementById('content'));
+              }
+              return false;//保持当前窗口不关闭
+            }
+
+            var eventJson = {
+              "lng": e.point.lng,
+              "lat": e.point.lat,
+              "time": timeValue,
+              "address": addressValue,
+              "type": typeValue,
+              "content": contentValue
+            }
+            var marker = new BMap.Marker(e.point);// 创建标注
+            $.post(
+                    "addNewEvent.action",
+                    eventJson,
+                    function (data) {
+                      marker.setTitle(data);
+                      var tip2 = dialog({
+                        content: '<p>添加成功<p>',
+                        quickClose: true});
+                      tip2.show();
+                    },
+                    "text");
+
+            map.addOverlay(marker);              // 将标注添加到地图中
+              markerClusterer.addMarker(marker);
+            //构建信息窗内容用于展示
+            var typeString = typeValue;
+            var opts = {
+              width : 300,     // 信息窗口宽度
+              title : typeString + "事件" // 信息窗口标题
+            }
+            var content = "时间：" + timeValue + "<br> 地址：" + addressValue +
+                            "<br> 详细：" + contentValue ;
+            var infoWindow = new BMap.InfoWindow(content, opts);  // 创建信息窗口对象
+            marker.addEventListener("click", function(){
+              map.openInfoWindow(infoWindow, e.point); //开启信息窗口
+            });
+
+            //删除
+            var removeMarker = function(e,ee,marker){
+              map.removeOverlay(marker);
+                markerClusterer.removeMarker(marker);
+              marker_title = marker.getTitle();
+              $.get(
+                      "deleteEvent.action",
+                      {id: marker_title},
+                      function (data) {
+                        var tip2 = dialog({
+                                  content: '<p>删除成功<p>',
+                          quickClose: true});
+                        tip2.show();
+                      }
+              )
+            }
+
+            //创建右键删除功能
+            var markerMenu=new BMap.ContextMenu();
+            markerMenu.addItem(new BMap.MenuItem('删除',removeMarker.bind(marker)));
+            marker.addContextMenu(markerMenu);
+
+            this.close();
+            this.remove();
+          },
+          okValue:'提交',
+          cancelValue: '取消'
+        })
+        eventInfo.show();
+        this.close;
+        this.remove();
+      },
+      cancelValue: '取消',
+      cancel: function () {}
+    });
+    tip.show();
+  }
+
+  function loadSafeEvent(){
+       map.clearOverlays();
+      if(markerClusterer != undefined){
+          markerClusterer.clearMarkers();
+      }
+    $.get(
+            "getSafeEvent.action",
+            function (jsonStr) {
+              var StrArray = eval(jsonStr);  //解析json数据
+              addAllMarkers(StrArray);  //添加所有事件节点
+            },
+            "json"
+    );  //从后台获取所有数据
+  }
+
+  function loadArtEvent(){
+      map.clearOverlays();
+      markerClusterer.clearMarkers();
+
+      $.get(
+              "getArtEvent.action",
+              function (jsonStr) {
+                  var StrArray = eval(jsonStr);  //解析json数据
+                  addAllMarkers(StrArray);  //添加所有事件节点
+              },
+              "json"
+      );  //从后台获取所有数据
+  }
+
+  function addAllMarkers(StrArray) {
+
+    var markers = new Array();
+    var infoWindow = new Array();
+    var pointString = new Array();
+    var points =  new Array();
+
+    for (var i = 0; i < StrArray.length; i++) {
+
+      //非复合数据
+      var htmlStr = "";
+      var e = new BMap.Point();
+      if (Object.keys(StrArray[i]).indexOf("events") == -1) {
+        e.lng = parseFloat(StrArray[i].lng).toFixed(6);
+        e.lat = parseFloat(StrArray[i].lat).toFixed(6);
+
+        var marker = new BMap.Marker(e);//创建Marker
+        markers[i] = marker;
+//        map.addOverlay(marker);  //将Marker添加到地图中
+        marker.setTitle(StrArray[i].id);  //添加Marker的标志
+
+        var event_type = StrArray[i].type;
+        var event_time = StrArray[i].time;
+        var event_addr = StrArray[i].addr;
+        var event_content = StrArray[i].content;
+
+        htmlStr = htmlStr + ("<div style='width:300px'>");
+        htmlStr = htmlStr + ("事件类型：" + event_type + "<br>");
+        htmlStr = htmlStr + ("事件时间：" + event_time + "<br>");
+        htmlStr = htmlStr + ("事件地点：" + event_addr + "<br>");
+        htmlStr = htmlStr + ("事件详情：" + event_content + "<br>");
+        htmlStr = htmlStr + ("</div>");
+        infoWindow[i] = htmlStr;
+        pointString.push("{lat:" + e.lat + ", lng:" + e.lng + "}");
+        points[i] = e;
+        var removeMarker = function(e,ee,marker){
+          map.removeOverlay(marker);
+            markerClusterer.removeMarker(marker)
+          marker_title = marker.getTitle();
+
+          $.get(
+                  "deleteEvent.action",
+                  {id: marker_title},
+                  function (data) {
+                    var tip2 = dialog({
+                      content: '<p>删除成功<p>',
+                      quickClose: true});
+                    tip2.show();
+                  }
+          )
+        }
+        //创建右键删除功能
+        var markerMenu=new BMap.ContextMenu();
+        markerMenu.addItem(new BMap.MenuItem('删除',removeMarker.bind(marker)));
+        marker.addContextMenu(markerMenu);
+      }
+      //复合数据
+      else {
+        var event_id = new Array();
+        var event_type = new Array();
+        var event_time = new Array();
+        var event_addr = StrArray[i].events[0].addr;
+        var event_content = new Array();
+        var htmlStr = "";
+        var idlist = "";
+
+        e.lng = parseFloat(StrArray[i].events[0].lng).toFixed(6);
+        e.lat = parseFloat(StrArray[i].events[0].lat).toFixed(6);
+        var marker = new BMap.Marker(e);
+        markers[i] = marker;// 创建Marker
+//        map.addOverlay(marker);           // 将Marker添加到地图中
+
+        for (var j = 0; j < StrArray[i].events.length; j++) {
+            if(StrArray[i].events[j] != null){
+                idlist = idlist + StrArray[i].events[j].id + "%";
+
+                event_id[j] = StrArray[i].events[j].id;
+                event_type[j] = StrArray[i].events[j].type;
+                event_time[j] = StrArray[i].events[j].time;
+                event_content[j] = StrArray[i].events[j].content;
+            }
+
+        }
+        idlist = idlist.substring(0, idlist.length - 1);  //去掉最后一个%
+        marker.setTitle(idlist);  //添加Marker的标志
+
+        var detail;
+
+        htmlStr = htmlStr + ("<div style='width:300px' >");
+
+        for (var k = 0; k < event_content.length; k++) {
+          htmlStr = htmlStr + ("事件类型：" + event_type[k] + "<br>");
+          htmlStr = htmlStr + ("事件时间：" + event_time[k] + "<br>");
+          htmlStr = htmlStr + ("事件地点：" + event_addr + "<br>");
+          htmlStr = htmlStr + ("事件详情：" + event_content[k] + "<br><br>");
+
+        }
+
+        htmlStr = htmlStr +("</div>");
+        infoWindow[i] = htmlStr;
+        points[i] = e;
+        var removeMarker = function(e,ee,marker){
+          map.removeOverlay(marker);
+            markerClusterer.removeMarker(marker)
+          marker_title = marker.getTitle();
+          $.get(
+                  "deleteEvent.action",
+                  {id: marker_title},
+                  function (data) {
+                    var tip2 = dialog({
+                      content: '<p>删除成功<p>',
+                      quickClose: true});
+                    tip2.show();
+                  }
+          )
+        }
+        //创建右键删除功能
+        var markerMenu=new BMap.ContextMenu();
+        markerMenu.addItem(new BMap.MenuItem('删除',removeMarker.bind(marker)));
+        marker.addContextMenu(markerMenu);
+      }
+    }
+
+    for(var j = 0; j < markers.length; j++){
+      (function(num) {
+        markers[num].addEventListener("click", function () {
+          map.openInfoWindow(new BMap.InfoWindow(infoWindow[num], {enableMessage: false}),markers[num].getPosition()); //开启信息窗口
+        });
+      })(j);
+    }
+
+     markerClusterer = new BMapLib.MarkerClusterer(map, {markers:markers});
+
+  }
+
+</script>
+</html>
+
+

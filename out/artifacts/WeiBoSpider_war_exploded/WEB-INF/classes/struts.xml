@@ -1,0 +1,22 @@
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN" "http://struts.apache.org/dtds/struts-2.0.dtd" >
+<struts>
+    <package name="com.eventMap.struts2" extends="struts-default" >
+        <!--<global-results>-->
+            <!--<result name="success">/index.jsp</result>-->
+        <!--</global-results>-result>-->
+        <action name="getAllEvent" class="actions.GetAllEventAction">
+            <result name="success">/index.jsp</result>
+        </action>
+        <action name="getSafeEvent" class="actions.GetSafeEventAction"> </action>
+        <action name="getArtEvent" class="actions.GetArtEventAction">
+
+        </action>
+        <action name="addNewEvent" class="actions.AddEventAction">
+        </action>
+        <action name="checkUpdate" class="actions.CheckUpdateAction">
+        </action>
+        <action name="deleteEvent" class="actions.DeleteEventAction">
+
+        </action>
+    </package>
+</struts>
